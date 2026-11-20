@@ -65,12 +65,13 @@ public class SecurityConfig {
         } else {
             Arrays.stream(allowedOrigins.split(","))
                     .map(String::trim)
+                    .filter(s -> !s.isEmpty())
                     .forEach(configuration::addAllowedOriginPattern);
         }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization", "Content-Disposition"));
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Disposition", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -91,6 +92,7 @@ public class SecurityConfig {
                                 "/assets/**",
                                 "/favicon.ico",
                                 "/api/auth/login",
+                                "/api/health",
                                 "/api/health/**",
                                 "/actuator/**",
                                 "/error"

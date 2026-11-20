@@ -6,9 +6,13 @@
 [![React](https://img.shields.io/badge/React-18-blue.svg)](frontend)
 [![Vite](https://img.shields.io/badge/Vite-5.4-purple.svg)](frontend)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-blue.svg)](database)
-[![Deploy on Render](https://img.shields.io/badge/Deploy%20to-Render-46E3B7.svg)](render.yaml)
+[![Deploy on Render](https://img.shields.io/badge/Backend-Render-46E3B7.svg)](render.yaml)
+[![Deploy on Vercel](https://img.shields.io/badge/Frontend-Vercel-black.svg)](frontend)
 
-A production-ready, cloud-native enterprise web application designed to manage the end-to-end campus recruitment and placement lifecycle. Fully migrated from an Eclipse Java console project to a modern Spring Boot + PostgreSQL + React full-stack application deployable on Render.
+A production-ready, cloud-native enterprise web application designed to manage the end-to-end campus recruitment and placement lifecycle. Fully migrated from an Eclipse Java console project to a modern Spring Boot + PostgreSQL + React full-stack application configured for split production deployment:
+- **Repository**: GitHub
+- **Backend & Database**: Render (Spring Boot Docker Web Service + Managed PostgreSQL)
+- **Frontend**: Vercel (React 18 + Vite SPA)
 
 ---
 
@@ -27,9 +31,12 @@ A production-ready, cloud-native enterprise web application designed to manage t
    - [Frontend Execution](#3-frontend-execution)
 10. [Automated Testing](#automated-testing)
 11. [REST API Overview](#rest-api-overview)
-12. [Render Cloud Deployment Guide](#render-cloud-deployment-guide)
-13. [GitHub Publishing Instructions](#github-publishing-instructions)
-14. [Troubleshooting & FAQs](#troubleshooting--faqs)
+12. [Production Deployment Guide (GitHub + Render + Vercel)](#production-deployment-guide)
+    - [Step 1: Push Repository to GitHub](#step-1-push-repository-to-github)
+    - [Step 2: Deploy Backend & PostgreSQL on Render](#step-2-deploy-backend--postgresql-on-render)
+    - [Step 3: Deploy Frontend on Vercel](#step-3-deploy-frontend-on-vercel)
+    - [Step 4: Update CORS on Render with Live Vercel URL](#step-4-update-cors-on-render-with-live-vercel-url)
+13. [Troubleshooting & FAQs](#troubleshooting--faqs)
 
 ---
 
@@ -106,10 +113,10 @@ Preserves the exact business logic from the original `EligibilityService.java`:
 | :--- | :--- |
 | **Backend** | Java 21, Spring Boot 3.3.5, Spring Security, Spring Data JPA, Spring Validation |
 | **Database** | PostgreSQL 15+, Flyway DB Migrations, HikariCP Connection Pooling |
-| **Security** | JWT (jjwt 0.12.6), BCrypt Password Hashing, CORS Configuration |
+| **Security** | JWT (jjwt 0.12.6), BCrypt Password Hashing, Dynamic Comma-Separated CORS |
 | **Frontend** | React 18, Vite 5.4, Tailwind CSS, Lucide React Icons, Axios |
 | **Build & Tooling** | Maven 3.9.9, Node.js 20+, Docker (Multi-stage build) |
-| **Deployment** | Render (Docker Web Service for Backend, Static Site for Frontend, Managed PostgreSQL) |
+| **Production Infrastructure** | GitHub (Repo) + Render (Spring Boot Docker Web Service + PostgreSQL) + Vercel (React Vite SPA) |
 
 ---
 
@@ -117,15 +124,15 @@ Preserves the exact business logic from the original `EligibilityService.java`:
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│             React + Vite Frontend (SPA)                │
-│    - Responsive Admin UI (Tailwind CSS)                │
-│    - State & Auth Management (React Context)           │
-│    - REST Client with Bearer Token Interceptor         │
+│             Vercel: React + Vite Frontend (SPA)        │
+│    - Responsive Admin Dashboard (Tailwind CSS)         │
+│    - Client-side Routing with vercel.json SPA rewrites │
+│    - Axios Client configured via VITE_API_BASE_URL     │
 └───────────────────────────┬────────────────────────────┘
-                            │ HTTPS / REST (JSON)
+                            │ HTTPS / REST (JSON) + CORS
                             ▼
 ┌────────────────────────────────────────────────────────┐
-│            Spring Boot 3.3 REST API Service            │
+│       Render: Spring Boot 3.3 Docker Web Service       │
 │  ┌───────────────────────┬──────────────────────────┐  │
 │  │ Security & JWT Filter │ Global Exception Handler │  │
 │  ├───────────────────────┴──────────────────────────┤  │
@@ -155,10 +162,10 @@ RPMS_Java_Eclipse/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/kiranacademy/rpms/
-│   │   │   │   ├── config/        # Database & CORS Config
-│   │   │   │   ├── controller/    # REST Controllers
+│   │   │   │   ├── config/        # DatabaseConfig (Render URL parser) & CORS
+│   │   │   │   ├── controller/    # 13 REST Controllers
 │   │   │   │   ├── dto/           # Request & Response DTOs
-│   │   │   │   ├── entity/        # JPA Entities
+│   │   │   │   ├── entity/        # 15 JPA Entities
 │   │   │   │   ├── exception/     # Custom Exceptions & Global Handler
 │   │   │   │   ├── repository/    # Spring Data Repositories
 │   │   │   │   ├── security/      # JWT, SecurityConfig, UserDetails
@@ -174,20 +181,22 @@ RPMS_Java_Eclipse/
 │   │   ├── components/common/     # Navbar, Sidebar, Modal, Badge, StatCard
 │   │   ├── context/               # AuthContext
 │   │   ├── pages/                 # Dashboard, Candidates, Jobs, Apps, etc.
-│   │   └── services/              # Axios API client with interceptors
+│   │   └── services/              # Axios API client (handles base URLs safely)
+│   ├── .env.example               # Template documenting VITE_API_BASE_URL
+│   ├── vercel.json                # Vercel SPA rewrite configuration (all -> index.html)
 │   ├── index.html
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── vite.config.js
 ├── database/
 │   └── migrations/                # Standalone DB Migration scripts
-├── docs/                          # Original Student Specification PDF
+├── docs/                          # Original Student Specification PDF (Preserved)
 ├── sql/                           # Original MySQL Scripts (Preserved)
 ├── src/                           # Original Eclipse Console Source (Preserved)
 ├── .gitignore                     # Git ignore rules for Java, Node, env, IDE
 ├── PROJECT_ANALYSIS.md            # Comprehensive pre-migration technical audit
 ├── README.md                      # Complete project documentation
-└── render.yaml                    # Infrastructure as Code (Render Blueprint)
+└── render.yaml                    # Render Blueprint (Backend + PostgreSQL only)
 ```
 
 ---
@@ -216,20 +225,20 @@ RPMS_Java_Eclipse/
 
 ## Environment Variables
 
-### Backend Configuration
+### Backend Configuration (Render)
 | Variable | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `PORT` | No | `8080` | Web server listening port (Render sets automatically) |
-| `DATABASE_URL` | Yes (Prod) | `jdbc:postgresql://localhost:5432/rpms_db` | PostgreSQL connection URL or Render `postgres://...` URL |
-| `DB_USERNAME` | No | `postgres` | Database username (if not parsed from DATABASE_URL) |
-| `DB_PASSWORD` | No | `postgres` | Database password (if not parsed from DATABASE_URL) |
-| `JWT_SECRET` | Yes (Prod) | *(Default 256-bit Hex Key)* | Secret key for signing JSON Web Tokens |
-| `CORS_ALLOWED_ORIGINS` | No | `*` | Comma-separated list of allowed frontend domains |
+| `PORT` | No | `8080` | Web server listening port (Render assigns dynamically) |
+| `DATABASE_URL` | Yes (Prod) | `jdbc:postgresql://localhost:5432/rpms_db` | Render PostgreSQL internal connection URL |
+| `DB_USERNAME` | No | `postgres` | Database username (parsed automatically from DATABASE_URL) |
+| `DB_PASSWORD` | No | `postgres` | Database password (parsed automatically from DATABASE_URL) |
+| `JWT_SECRET` | Yes (Prod) | *(Generated by Render)* | 256-bit secret key for signing JSON Web Tokens |
+| `CORS_ALLOWED_ORIGINS` | Yes (Prod) | `*` | Comma-separated allowed origins (e.g. `https://my-rpms.vercel.app,http://localhost:5173`) |
 
-### Frontend Configuration
+### Frontend Configuration (Vercel)
 | Variable | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `VITE_API_BASE_URL` | Yes (Prod) | `http://localhost:8080/api` | Backend REST API base URL |
+| `VITE_API_BASE_URL` | Yes (Prod) | `http://localhost:8080/api` | Render backend API base URL (e.g. `https://rpms-backend.onrender.com/api`) |
 
 ---
 
@@ -259,7 +268,7 @@ curl http://localhost:8080/api/health
 ```
 Expected output:
 ```json
-{"status":"UP","message":"RPMS Backend is operational"}
+{"status":"UP","service":"RPMS Recruitment & Placement Management API","timestamp":"..."}
 ```
 
 ### 3. Frontend Execution
@@ -341,74 +350,90 @@ All API endpoints are prefixed with `/api`. Protected routes require header:
 - `GET /api/reports/technology` — Technology report.
 - `GET /api/reports/technology/export` — Download CSV report.
 - `GET /api/activity-logs` — Full system activity audit trail.
-- `GET /api/health` — Health check endpoint for container monitors.
+- `GET /api/health` — Public health check endpoint for container and uptime monitors.
 
 ---
 
-## Render Cloud Deployment Guide
+## Production Deployment Guide
 
-This project includes a complete **Render Blueprint** (`render.yaml`) that configures the Backend Web Service, Frontend Static Site, and Managed PostgreSQL Database in a single click.
+Follow these 4 sequential steps to deploy RPMS in production using GitHub, Render, and Vercel.
 
-### Step 1: Push Code to GitHub
-Ensure all code is committed and pushed to your GitHub repository (see [GitHub Publishing Instructions](#github-publishing-instructions)).
-
-### Step 2: Deploy on Render via Blueprint
-1. Log in to [Render.com](https://render.com).
-2. Click **New +** in the top navigation and select **Blueprint**.
-3. Connect your GitHub repository.
-4. Render detects `render.yaml` and sets up:
-   - `rpms-postgres`: Free tier PostgreSQL database.
-   - `rpms-backend`: Docker-based web service listening on `$PORT`, connected to `rpms-postgres`.
-   - `rpms-frontend`: Static web application built via Vite, routing requests to `rpms-backend`.
-5. Click **Apply**.
-6. Render builds the Docker container, runs Flyway migrations automatically, builds the frontend, and launches both services.
-
-### Manual Render Configuration (Alternative)
-If not using Blueprints:
-1. **Create PostgreSQL Database**:
-   - Name: `rpms-postgres`, Database: `rpms_db`, User: `rpms_user`.
-   - Copy the **Internal Database URL**.
-2. **Create Backend Web Service**:
-   - Environment: `Docker`
-   - Dockerfile Path: `backend/Dockerfile`
-   - Docker Context: `backend`
-   - Add Environment Variables:
-     - `PORT`: `8080`
-     - `DATABASE_URL`: *(Paste Render Database URL)*
-     - `JWT_SECRET`: *(Generate a 64-character random string)*
-     - `CORS_ALLOWED_ORIGINS`: `*`
-   - Health Check Path: `/api/health`
-3. **Create Frontend Static Site**:
-   - Build Command: `cd frontend && npm install && npm run build`
-   - Publish Directory: `frontend/dist`
-   - Add Environment Variable:
-     - `VITE_API_BASE_URL`: `https://your-backend-url.onrender.com/api`
-   - Add Rewrite Rule: `/*` &rarr; `/index.html` (Status: `Rewrite`).
-
----
-
-## GitHub Publishing Instructions
-
-To publish this project to your GitHub account:
+### Step 1: Push Repository to GitHub
 
 ```bash
-# 1. Initialize git (if not already initialized)
-git init
-
-# 2. Add all files (.gitignore will exclude node_modules, build targets, and tools)
-git add .
-
-# 3. Commit changes
-git commit -m "feat: complete full-stack web migration of RPMS with Spring Boot, PostgreSQL, React, and Render blueprint"
-
-# 4. Create a repository on GitHub (e.g. rpms-recruitment-placement-system)
-# 5. Link your local repository to GitHub
+# 1. Create a new GitHub repository (e.g. rpms-recruitment-placement-system)
+# 2. Add remote origin (if not already added)
 git remote add origin https://github.com/<your-username>/rpms-recruitment-placement-system.git
 
-# 6. Push to main branch
+# 3. Rename branch to main and push
 git branch -M main
 git push -u origin main
 ```
+
+---
+
+### Step 2: Deploy Backend & PostgreSQL on Render
+
+Render provisions the PostgreSQL database and Spring Boot backend container automatically from `render.yaml`.
+
+1. Go to **[Render Dashboard](https://dashboard.render.com/)**.
+2. Click **New +** &rarr; Select **Blueprint**.
+3. Connect your GitHub repository (`rpms-recruitment-placement-system`).
+4. Render detects `render.yaml` and lists the 2 resources:
+   - **`rpms-postgres`**: Managed PostgreSQL Database (`rpms_db`).
+   - **`rpms-backend`**: Docker Web Service running Spring Boot on Java 21.
+5. In the blueprint parameters prompt:
+   - For `CORS_ALLOWED_ORIGINS`, you can temporarily leave it as `*` or enter your planned Vercel domain.
+6. Click **Apply**.
+7. Wait 3–4 minutes while Render:
+   - Creates the database.
+   - Builds the Docker container via `backend/Dockerfile`.
+   - Executes Flyway migrations (creates 15 tables + seeds initial records).
+   - Verifies the health check at `/api/health`.
+8. Once deployed, note down your Render Backend URL (e.g., `https://rpms-backend-xxxx.onrender.com`).
+9. Test health in your browser:
+   `https://rpms-backend-xxxx.onrender.com/api/health` &rarr; returns `{"status":"UP", ...}`.
+
+---
+
+### Step 3: Deploy Frontend on Vercel
+
+1. Go to **[Vercel Dashboard](https://vercel.com/dashboard)**.
+2. Click **Add New...** &rarr; Select **Project**.
+3. Import your GitHub repository (`rpms-recruitment-placement-system`).
+4. In the **Configure Project** screen:
+   - **Project Name**: `rpms-frontend` (or your choice).
+   - **Framework Preset**: Select **Vite**.
+   - **Root Directory**: Click **Edit** &rarr; select **`frontend`** &rarr; click **Continue**.
+   - **Build and Output Settings**: Defaults are pre-configured:
+     - Build Command: `npm run build`
+     - Output Directory: `dist`
+5. Expand **Environment Variables**:
+   - Key: `VITE_API_BASE_URL`
+   - Value: `https://<your-render-backend-name>.onrender.com/api`  
+     *(Be sure to include `/api` at the end)*
+6. Click **Deploy**.
+7. Vercel builds the SPA and deploys it in ~30 seconds.
+8. When deployment finishes, note your live Vercel URL (e.g., `https://rpms-frontend-xxxx.vercel.app`).
+9. Thanks to `frontend/vercel.json`, refreshing any sub-route (such as `/candidates` or `/dashboard`) works seamlessly without 404 errors.
+
+---
+
+### Step 4: Update CORS on Render with Live Vercel URL
+
+To lock down backend access to only your live Vercel frontend:
+
+1. Return to the **[Render Dashboard](https://dashboard.render.com/)**.
+2. Click on the **`rpms-backend`** web service.
+3. In the left navigation, click **Environment**.
+4. Locate the `CORS_ALLOWED_ORIGINS` variable (or add it if not present).
+5. Set the value to your live Vercel frontend URL plus local dev if desired:
+   ```text
+   https://rpms-frontend-xxxx.vercel.app,http://localhost:5173
+   ```
+6. Click **Save Changes**.
+7. Render will automatically redeploy the backend with the new CORS configuration.
+8. Open your live Vercel app in the browser and log in with `admin` / `Admin@123`!
 
 ---
 
@@ -420,8 +445,11 @@ Render passes `postgres://username:password@host:port/database`. Our custom `Dat
 #### 2. Are original Eclipse project files preserved?
 Yes! The original Eclipse console starter files remain completely intact in `src/`, `sql/`, `.classpath`, and `.project`. You can still import and run the original Eclipse project whenever needed.
 
-#### 3. How do I change default administrator credentials in production?
-In production, log in with the initial `admin` account and change the password immediately, or set an initial hashed password via Flyway migration script before production deployment.
+#### 3. Why is `frontend/vercel.json` required?
+Because React is a Single Page Application (SPA) using client-side routing. When a user navigates to `/candidates` and refreshes, Vercel looks for a static file at `/candidates.html`. The rewrite rule in `frontend/vercel.json` directs all unknown routes to `/index.html`, allowing React Router to handle page rendering.
+
+#### 4. How do I change default administrator credentials in production?
+In production, log in with the initial `admin` account and change the password immediately via the database or staff provisioning panel.
 
 ---
 

@@ -1,11 +1,23 @@
 import axios from 'axios';
 
-// Priority: VITE_API_BASE_URL -> empty string for relative proxy
-const rawBase = import.meta.env.VITE_API_BASE_URL || '';
-const baseURL = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
+// Resolve base URL safely:
+// Supports full API URL (e.g., https://rpms-backend.onrender.com/api),
+// host-only URL (e.g., https://rpms-backend.onrender.com),
+// trailing slashes, or defaults to local dev server http://localhost:8080/api.
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (!envUrl || !envUrl.trim()) {
+    return 'http://localhost:8080/api';
+  }
+  let cleaned = envUrl.trim().replace(/\/+$/, '');
+  if (!cleaned.endsWith('/api')) {
+    cleaned += '/api';
+  }
+  return cleaned;
+};
 
 const api = axios.create({
-  baseURL: baseURL ? `${baseURL}/api` : '/api',
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
