@@ -2,10 +2,11 @@ package com.kiranacademy.rpms.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -90,5 +91,20 @@ public class DatabaseConfig {
         config.setMaxLifetime(1800000);
 
         return new HikariDataSource(config);
+    }
+
+    @Bean
+    @Profile("!test")
+    public FlywayMigrationStrategy flywayMigrationStrategy() {
+        return flyway -> {
+            log.info("Executing Flyway repair to clear any failed migration history...");
+            try {
+                flyway.repair();
+            } catch (Exception e) {
+                log.warn("Flyway repair encountered an issue (continuing to migrate): {}", e.getMessage());
+            }
+            log.info("Executing Flyway migrate...");
+            flyway.migrate();
+        };
     }
 }
